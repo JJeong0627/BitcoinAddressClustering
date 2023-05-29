@@ -18,7 +18,7 @@ output_data=pd.read_csv(datasets_path+"/output_data.csv")
 ad_info=pd.read_csv(datasets_path+"/address_info.csv")
 tx_list=tx['tx_hash'].tolist() #tx_hash만을 리스트
 
-'''Address Script Type Processing'''
+# Address Script Type Processing
 def address_script(input_data,output_data):
 
     ad_list=list(set(input_data['address_hash'].tolist()+output_data['address_hash'].tolist())) #중복제거한 후 list
