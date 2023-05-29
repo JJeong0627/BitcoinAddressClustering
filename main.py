@@ -16,12 +16,12 @@ tx=pd.read_csv(datasets_path+"/transactions_data.csv")
 input_data=pd.read_csv(datasets_path+"/input_data.csv")
 output_data=pd.read_csv(datasets_path+"/output_data.csv")
 ad_info=pd.read_csv(datasets_path+"/address_info.csv")
-tx_list=tx['tx_hash'].tolist()
+tx_list=tx['tx_hash'].tolist() #tx_hash만을 리스트
 
 '''Address Script Type Processing'''
 def address_script(input_data,output_data):
 
-    ad_list=list(set(input_data['address_hash'].tolist()+output_data['address_hash'].tolist()))
+    ad_list=list(set(input_data['address_hash'].tolist()+output_data['address_hash'].tolist())) #중복제거한 후 list
     script_type=[]
     for ad in ad_list:
         if ad[0]=='1':
@@ -33,11 +33,14 @@ def address_script(input_data,output_data):
         else:
             script_type.append('Address which can not be parsed')
 
+    # ad_list랑 script_type로 데이터 프레임 만들기.
     ad_dataset=pd.DataFrame({'address_hash':ad_list,'script_type':script_type})
-    ad_script_dic={ad_list[i]:script_type[i] for i in range(len(ad_list))}
-    input_data=pd.merge(input_data,ad_dataset,on='address_hash',how='left')
+
+    # address 마다 type 짝 짓기.(dictionary)
+    ad_script_dic={ad_list[i]:script_type[i] for i in range(len(ad_list))} 
+    input_data=pd.merge(input_data,ad_dataset,on='address_hash',how='left') # csv 합치기
     output_data=pd.merge(output_data,ad_dataset,on='address_hash',how='left')
-    input_data.dropna(axis=0, subset=['script_type'], inplace=True)
+    input_data.dropna(axis=0, subset=['script_type'], inplace=True) # 결측지 없애줌.
     output_data.dropna(axis=0, subset=['script_type'], inplace=True)
 
     return input_data,output_data,ad_script_dic
@@ -59,7 +62,7 @@ def change_address_identify(tx,input_data,output_data,ad_info,tx_list,ad_script_
     tx_type=[]
     k=0
     for t in  tx_list:
-        t_info = tx[tx['tx_hash'] == t]
+        t_info = tx[tx['tx_hash'] == t] 
         input_count=t_info['input_count'].values[0]
         output_count = t_info['output_count'].values[0]
         tx_input = input_data[input_data['tx_hash'] == t]
@@ -99,10 +102,10 @@ def change_address_identify(tx,input_data,output_data,ad_info,tx_list,ad_script_
             ad_h2 = []
             for ad in output_address:
                 if ad in input_address:
-                    self_change_tx.append('self-change')
+                    self_change_tx.append('self-change') # output_address에 있는 주소가 input_address에도 있으면 self-change
                     break
                 else:
-                    first_receive_time = ad_info[ad_info['address_hash'] == ad]['first_seen_receiving'].values[0]
+                    first_receive_time = ad_info[ad_info['address_hash'] == ad]['first_seen_receiving'].values[0] # first_seen_receiving 시간 저장
                     if t_time == first_receive_time:
                         ad_h2.append(ad)
             if self_change_tx !=[] and self_change_tx[0]=='self-change':
@@ -122,7 +125,7 @@ def change_address_identify(tx,input_data,output_data,ad_info,tx_list,ad_script_
                 h3.append('There is no new address')
             else:
                 for ad in output_address:
-                    if ad_info[ad_info['address_hash'] == ad]['output_count'].values[0] == 1:  # 地址是新地址且未被重用
+                    if ad_info[ad_info['address_hash'] == ad]['output_count'].values[0] == 1:  # 주소가 새 주소이고 다시 사용되지 않았습니다
                         ad_h3.append(ad)
                 if len(ad_h3) == 0:
                     h3.append('All new addresses are reused')
@@ -745,9 +748,9 @@ print(clustering_result)
 print('------')
 
 '''Address reduction rate'''
-
 def ad_reduce_rate(clustering_result,input_data,output_data):
     r=pd.DataFrame(columns=['H1','H2','H3','H4','H5','H6','H7'])
+
     for height in clustering_result.index:
         ad_num=len(set(input_data[input_data['block_id']<=height]['address_hash'].tolist()))+len(set(output_data[output_data['block_id']<=height]['address_hash'].tolist()))
         h1_cluster_num=clustering_result.loc[height]['H1']
@@ -757,6 +760,7 @@ def ad_reduce_rate(clustering_result,input_data,output_data):
         h5_cluster_num = clustering_result.loc[height]['H5']
         h6_cluster_num = clustering_result.loc[height]['H6']
         h7_cluster_num = clustering_result.loc[height]['H7']
+
         r.loc[height]=(ad_num-np.array([h1_cluster_num,h2_cluster_num,h3_cluster_num,h4_cluster_num,h5_cluster_num,h6_cluster_num,h7_cluster_num]))/ad_num
     return r
 
@@ -765,6 +769,5 @@ r=ad_reduce_rate(clustering_result,input_data,output_data)
 print('Address reduction rate')
 print(r)
 print('------')
-
 
 
